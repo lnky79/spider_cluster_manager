@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tool',
+    'django_rq',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -72,3 +73,39 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+redis_url =  os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
+
+RQ_QUEUES = {
+    'default':{
+        'URL': redis_url,
+    },
+    'high':{
+        'URL': redis_url,
+    },
+    'low':{
+        'URL': redis_url,
+    },
+}
+
+'''
+RQ_QUEUES = {
+    'default': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'PASSWORD': 'some-password',
+        'DEFAULT_TIMEOUT': 360,
+    },
+    'high': {
+        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6379/0'), # If you're on Heroku
+        'DEFAULT_TIMEOUT': 500,
+    },
+    'low': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+    }
+}
+'''

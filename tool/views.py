@@ -14,6 +14,11 @@ from public_func import *
 from .models import ProxyServerORM
 from db_config import Session
 from sqlalchemy import text
+from .rq_func import *
+
+import django_rq
+
+
 
 @json_response
 def get_proxy_config(request):
@@ -39,6 +44,10 @@ def get_proxy_config(request):
         }
         proxy_server.busy = True
         db_session.commit()
+
+        queue = django_rq.get_queue('high')
+        queue.enqueue(free_back_proxy_item, 1)
+
         ret['status'] = 1
     except Exception as e:
         ret['message'] = str(e)
