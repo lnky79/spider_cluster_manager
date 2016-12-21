@@ -15,4 +15,5 @@ from .views import *
 
 urlpatterns = [
     url(r'^get_proxy_config$',get_proxy_config),
+    url(r'^free_server$',free_server),
 ]

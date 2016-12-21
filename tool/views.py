@@ -16,8 +16,22 @@ from db_config import Session
 from sqlalchemy import text
 from .rq_func import *
 
+from datetime import datetime,timedelta
 import django_rq
 
+@json_response
+def free_server(request):
+    ret = {'status': 0, 'err_msg': None}
+    if request.method != 'GET':
+        ret['err_msg'] = 'use GET method'
+        return ret
+    ip = request.GET['ip']
+    try:
+        free_back_proxy_item(ip=ip)
+        ret['status'] = 1
+    except Exception as e:
+        ret['err_msg'] = str(e)
+    return ret
 
 
 @json_response
@@ -44,9 +58,17 @@ def get_proxy_config(request):
         }
         proxy_server.busy = True
         db_session.commit()
+        print('get server: {}'.format(proxy_server))
 
-        queue = django_rq.get_queue('high')
-        queue.enqueue(free_back_proxy_item, 1)
+        scheduler = django_rq.get_scheduler('default')
+        scheduler.enqueue_in(
+            timedelta(seconds=1),
+            free_back_proxy_item,
+            proxy_server
+        )
+
+        django_rq.enqueue(free_back_proxy_item,
+                        {'proxy_server': proxy_server})
 
         ret['status'] = 1
     except Exception as e:
