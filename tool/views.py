@@ -43,18 +43,17 @@ def get_proxy_config(request):
     db_session = Session()
     try:
         proxy_servers = db_session.query(ProxyServerORM).filter(
-            text("busy is not true \
-                order by {} {} limit 100".format(
-                    random.choice(['id','last_check_time',
-                                   'fail_cot','location']),
-                    random.choice(['desc',''])
-            ))).all()
+            text(
+                "busy is not true order \
+                by fail_cot limit 10")
+        ).all()
         proxy_server = random.choice(proxy_servers)
         ret['data'] = {
             'ip': proxy_server.ip,
             'port': proxy_server.port,
             'location': proxy_server.location,
             'proxy_type': proxy_server.type,
+            'fail_cot': proxy_server.fail_cot
         }
         proxy_server.busy = True
         db_session.commit()
