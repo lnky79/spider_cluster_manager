@@ -33,46 +33,41 @@ def free_server(request):
         ret['err_msg'] = str(e)
     return ret
 
-
-@json_response
-def get_proxy_config(request):
-    ret = {'data': None, 'status': 0, 'message': None}
-    if request.method != 'GET':
-        ret['message'] = 'use GET method'
-        return ret
+def basic_req_for_proxy(quantity=10):
     db_session = Session()
     try:
         proxy_servers = db_session.query(ProxyServerORM).filter(
             text(
                 "busy is not true order \
-                by fail_cot limit 10")
-        ).all()
-        proxy_server = random.choice(proxy_servers)
-        ret['data'] = {
-            'ip': proxy_server.ip,
-            'port': proxy_server.port,
-            'location': proxy_server.location,
-            'proxy_type': proxy_server.type,
-            'fail_cot': proxy_server.fail_cot
-        }
-        proxy_server.busy = True
-        db_session.commit()
-        print('get server: {}'.format(proxy_server))
-
+                        by fail_cot limit :limit"
+            )).params(limit=quantity).all()
+        '''
         scheduler = django_rq.get_scheduler('default')
         scheduler.enqueue_in(
             timedelta(seconds=1),
             free_back_proxy_item,
             proxy_server
         )
-
         django_rq.enqueue(free_back_proxy_item,
                         {'proxy_server': proxy_server})
-
-        ret['status'] = 1
+        '''
+        return [ proxy_server.to_dict() for proxy_server in proxy_servers]
     except Exception as e:
-        ret['message'] = str(e)
         print(str(e))
     db_session.close()
+    return None 
+
+@json_response
+def get_proxy_configs(request):
+    ret = {'data': None, 'status': 0, 'message': None}
+    if request.method != 'GET':
+        ret['message'] = 'use GET method'
+        return ret
+    print(request.GET['quantity'])
+    ret['data'] = basic_req_for_proxy(
+        quantity = int(request.GET['quantity'])
+    )
+    print(ret['data'])
+    ret['status'] = 1
     return ret
 

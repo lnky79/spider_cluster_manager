@@ -14,6 +14,6 @@ from django.conf.urls import include, url
 from .views import *
 
 urlpatterns = [
-    url(r'^get_proxy_config$',get_proxy_config),
+    url(r'^get_proxy_configs$',get_proxy_configs),
     url(r'^free_server$',free_server),
-]
+    ]
