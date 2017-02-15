@@ -33,6 +33,9 @@ class ProxyServerORM(Base):
     fail_cot = Column(Integer)
     busy = Column(Boolean)
 
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
     def __repr__(self):
         return (
             "<ProxyServerORM(ip={},port={},location={})>"
