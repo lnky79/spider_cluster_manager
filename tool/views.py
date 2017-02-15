@@ -33,14 +33,19 @@ def free_server(request):
         ret['err_msg'] = str(e)
     return ret
 
-def basic_req_for_proxy(quantity=10):
+def basic_req_for_proxy(quantity=0,get_all_valid=1):
     db_session = Session()
     try:
-        proxy_servers = db_session.query(ProxyServerORM).filter(
-            text(
-                "busy is not true order \
-                        by fail_cot limit :limit"
-            )).params(limit=quantity).all()
+        if not get_all_valid:
+            proxy_servers = db_session.query(ProxyServerORM).filter(
+                text(
+                    "busy is not true order by fail_cot limit :limit"
+                )).params(limit=quantity).all()
+        else:
+            proxy_servers = db_session.query(ProxyServerORM).filter(
+                text(
+                    "fail_cot < 0 and busy is not true order by fail_cot "
+                )).all()
         '''
         scheduler = django_rq.get_scheduler('default')
         scheduler.enqueue_in(
@@ -63,10 +68,14 @@ def get_proxy_configs(request):
     if request.method != 'GET':
         ret['message'] = 'use GET method'
         return ret
-    print(request.GET['quantity'])
-    ret['data'] = basic_req_for_proxy(
-        quantity = int(request.GET['quantity'])
-    )
+    default_dict = {
+        'quantity': 0,
+        'get_all_valid': 1,
+    }
+    for key in default_dict.keys():
+        if key in request.GET.keys():
+            default_dict[key] = int(request.GET[key])
+    ret['data'] = basic_req_for_proxy(**default_dict)
     print(ret['data'])
     ret['status'] = 1
     return ret
