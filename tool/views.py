@@ -33,19 +33,19 @@ def free_server(request):
         ret['err_msg'] = str(e)
     return ret
 
-def basic_req_for_proxy(quantity=0,get_all_valid=1):
+def basic_req_for_proxy(quantity=0,get_all_valid=1,
+        is_anonymous=True):
     db_session = Session()
+    servers = []
     try:
-        if not get_all_valid:
-            proxy_servers = db_session.query(ProxyServerORM).filter(
-                text(
-                    "busy is not true order by fail_cot limit :limit"
-                )).params(limit=quantity).all()
+        if get_all_valid:
+            proxy_servers=db_session.query(ProxyServerORM)\
+                .filter(ProxyServerORM.fail_cot < 0)
         else:
-            proxy_servers = db_session.query(ProxyServerORM).filter(
-                text(
-                    "fail_cot < 0 and busy is not true order by fail_cot "
-                )).all()
+            pass
+        if is_anonymous:
+            proxy_servers = proxy_servers.filter(\
+                ProxyServerORM.is_anonymous==True).all()
         '''
         scheduler = django_rq.get_scheduler('default')
         scheduler.enqueue_in(
@@ -56,11 +56,11 @@ def basic_req_for_proxy(quantity=0,get_all_valid=1):
         django_rq.enqueue(free_back_proxy_item,
                         {'proxy_server': proxy_server})
         '''
-        return [ proxy_server.to_dict() for proxy_server in proxy_servers]
+        servers =  [ proxy_server.to_dict() for proxy_server in proxy_servers]
     except Exception as e:
         print(str(e))
     db_session.close()
-    return None 
+    return servers
 
 @json_response
 def get_proxy_configs(request):
@@ -71,6 +71,7 @@ def get_proxy_configs(request):
     default_dict = {
         'quantity': 0,
         'get_all_valid': 1,
+        'is_anonymous': 0,
     }
     for key in default_dict.keys():
         if key in request.GET.keys():
