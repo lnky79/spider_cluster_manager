@@ -38,9 +38,6 @@ class CJsonEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self,obj)
 
 
-
-from bson import json_util
-
 def json_response(func):
     """
     A decorator thats takes a view response and turns it
